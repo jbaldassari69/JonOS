@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+
+set -u
+
+readonly JONOS_VERSION="0.1.0"
+readonly JONOS_ROOT="${JONOS_ROOT:-$HOME/JonOS}"
+readonly SCRIPT_DIR="$JONOS_ROOT/Scripts"
+
+show_help() {
+    cat <<'EOF'
+JonOS - KDE Plasma profile switcher
+
+Usage:
+  jon gaming       Activate the Gaming profile
+  jon work         Activate the Work profile
+  jon coding       Activate the Coding profile
+  jon status       Show the current Plasma theme
+  jon version      Show the JonOS version
+  jon help         Show this help
+EOF
+}
+
+run_profile() {
+    local profile="$1"
+    local script="$SCRIPT_DIR/${profile}.sh"
+
+    if [[ ! -x "$script" ]]; then
+        printf 'JonOS: profile script is missing or not executable: %s\n' "$script" >&2
+        return 1
+    fi
+
+    "$script"
+}
+
+show_status() {
+    local theme
+
+    theme="$(kreadconfig6 \
+        --file kdeglobals \
+        --group KDE \
+        --key LookAndFeelPackage 2>/dev/null || true)"
+
+    printf 'JonOS version: %s\n' "$JONOS_VERSION"
+    printf 'Active Plasma theme: %s\n' "${theme:-unknown}"
+}
+
+main() {
+    case "${1:-help}" in
+        gaming)
+            run_profile gaming
+            ;;
+        work)
+            run_profile work
+            ;;
+        coding)
+            run_profile coding
+            ;;
+        status)
+            show_status
+            ;;
+        version|--version|-v)
+            printf 'JonOS %s\n' "$JONOS_VERSION"
+            ;;
+        help|--help|-h)
+            show_help
+            ;;
+        *)
+            printf 'JonOS: unknown command: %s\n\n' "$1" >&2
+            show_help >&2
+            return 2
+            ;;
+    esac
+}
+
+main "$@"

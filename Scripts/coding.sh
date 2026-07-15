@@ -2,16 +2,16 @@
 
 set -u
 
-printf '🐉 Switching to the Gaming profile...\n'
+printf '🌙 Switching to the Coding profile...\n'
 
-if plasma-apply-lookandfeel --apply Mokka; then
-    printf '✓ Theme applied\n'
+if plasma-apply-lookandfeel --apply org.kde.breezedark.desktop; then
+    printf '✓ Breeze Dark applied\n'
 else
-    printf '✗ Could not apply the theme\n' >&2
+    printf '✗ Could not apply Breeze Dark\n' >&2
     exit 1
 fi
 
-for app in steam discord; do
+for app in konsole code; do
     if command -v "$app" >/dev/null 2>&1; then
         if ! pgrep -x "$app" >/dev/null 2>&1; then
             "$app" >/dev/null 2>&1 &
@@ -24,4 +24,4 @@ for app in steam discord; do
     fi
 done
 
-printf '✓ Gaming profile ready\n'
+printf '✓ Coding profile ready\n'
