@@ -99,6 +99,29 @@ validate_arch_packages() {
     return "$invalid"
 }
 }
+
+check_installed_arch_packages() {
+    local manifest="$1"
+    local package
+    local installed=0
+    local missing=0
+
+    while IFS= read -r package; do
+        [[ -z "$package" ]] && continue
+
+        if pacman -Q "$package" >/dev/null 2>&1; then
+            printf '  [installed] %s\n' "$package"
+            ((installed += 1))
+        else
+            printf '  [missing]   %s\n' "$package"
+            ((missing += 1))
+        fi
+    done < <(read_manifest "$manifest")
+
+    log "Installed: $installed"
+    log "Missing: $missing"
+}
+
 main() {
     parse_arguments "$@"
     detect_distribution
@@ -125,6 +148,13 @@ main() {
 
     validate_arch_packages "$SCRIPT_DIR/packages/common.txt"
     validate_arch_packages "$SCRIPT_DIR/packages/arch.txt"
+    fi
+
+    if [[ "$DISTRO_ID" == "arch" || "$DISTRO_LIKE" == *"arch"* ]]; then
+    log "Checking installed packages"
+
+    check_installed_arch_packages "$SCRIPT_DIR/packages/common.txt"
+    check_installed_arch_packages "$SCRIPT_DIR/packages/arch.txt"
     fi
 
     log "Bootstrap foundation check complete"
