@@ -3,7 +3,9 @@
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+
 DRY_RUN=false
+INSTALL_MODE=false
 
 INSTALLED_PACKAGES=()
 MISSING_PACKAGES=()
@@ -22,6 +24,7 @@ Usage: bootstrap.sh [OPTIONS]
 
 Options:
   --dry-run   Show what JonOS would do without making changes
+  --install   Install missing packages
   -h, --help  Show this help message
 EOF
 }
@@ -46,6 +49,9 @@ parse_arguments() {
             --dry-run)
                 DRY_RUN=true
                 ;;
+            --install)
+                INSTALL_MODE=true
+                ;;
             -h|--help)
                 usage
                 exit 0
@@ -56,8 +62,20 @@ parse_arguments() {
                 exit 2
                 ;;
         esac
+
         shift
     done
+
+    if [[ "$DRY_RUN" == true && "$INSTALL_MODE" == true ]]; then
+        error "--dry-run and --install cannot be used together"
+        exit 2
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        log "Dry-run mode enabled; no changes will be made"
+    elif [[ "$INSTALL_MODE" == true ]]; then
+        log "Install mode enabled"
+    fi
 }
 
 read_manifest() {
@@ -74,6 +92,7 @@ read_manifest() {
 show_packages() {
     local manifest="$1"
     local label="$2"
+    local package
     local packages=()
 
     mapfile -t packages < <(read_manifest "$manifest")
@@ -83,6 +102,8 @@ show_packages() {
     for package in "${packages[@]}"; do
         printf '  - %s\n' "$package"
     done
+}
+
 validate_arch_packages() {
     local manifest="$1"
     local package
@@ -101,7 +122,7 @@ validate_arch_packages() {
 
     return "$invalid"
 }
-}
+
 check_installed_arch_packages() {
     local manifest="$1"
     local package
@@ -117,22 +138,46 @@ check_installed_arch_packages() {
             printf '  [missing]   %s\n' "$package"
         fi
     done < <(read_manifest "$manifest")
-    show_package_summary() {
+}
+
+show_package_summary() {
+    local package
+
     printf '\n'
     log "Package summary"
     printf '  Installed: %d\n' "${#INSTALLED_PACKAGES[@]}"
     printf '  Missing:   %d\n' "${#MISSING_PACKAGES[@]}"
 
-    if (( ${#MISSING_PACKAGES[@]} > 0 )); then
+    if ((${#MISSING_PACKAGES[@]} > 0)); then
         printf '\n'
         log "Packages requiring installation"
 
-        local package
         for package in "${MISSING_PACKAGES[@]}"; do
             printf '  - %s\n' "$package"
         done
     fi
 }
+
+install_missing_arch_packages() {
+    if ((${#MISSING_PACKAGES[@]} == 0)); then
+        log "All required packages are already installed"
+        return 0
+    fi
+
+    if [[ "$DRY_RUN" == true ]]; then
+        log "Dry-run: would install ${#MISSING_PACKAGES[@]} package(s)"
+        printf '  - %s\n' "${MISSING_PACKAGES[@]}"
+        return 0
+    fi
+
+    if [[ "$INSTALL_MODE" != true ]]; then
+        log "Installation not requested; no changes made"
+        return 0
+    fi
+
+    log "Installing ${#MISSING_PACKAGES[@]} missing package(s)"
+
+    sudo pacman -S --needed "${MISSING_PACKAGES[@]}"
 }
 
 main() {
@@ -151,26 +196,23 @@ main() {
 
     if [[ "$DISTRO_ID" == "arch" || "$DISTRO_LIKE" == *"arch"* ]]; then
         show_packages "$SCRIPT_DIR/packages/arch.txt" "Arch family"
-    fi
-    if [[ "$DRY_RUN" == true ]]; then
-    log "Dry-run mode enabled; no changes will be made"
-    fi
 
-    if [[ "$DISTRO_ID" == "arch" || "$DISTRO_LIKE" == *"arch"* ]]; then
-    log "Validating Arch package manifests"
+        log "Validating Arch package manifests"
+        validate_arch_packages "$SCRIPT_DIR/packages/common.txt"
+        validate_arch_packages "$SCRIPT_DIR/packages/arch.txt"
 
-    validate_arch_packages "$SCRIPT_DIR/packages/common.txt"
-    validate_arch_packages "$SCRIPT_DIR/packages/arch.txt"
-    fi
+        log "Checking installed packages"
+        check_installed_arch_packages "$SCRIPT_DIR/packages/common.txt"
+        check_installed_arch_packages "$SCRIPT_DIR/packages/arch.txt"
 
-    if [[ "$DISTRO_ID" == "arch" || "$DISTRO_LIKE" == *"arch"* ]]; then
-    log "Checking installed packages"
-
-    check_installed_arch_packages "$SCRIPT_DIR/packages/common.txt"
-    check_installed_arch_packages "$SCRIPT_DIR/packages/arch.txt"
-    show_package_summary
+        show_package_summary
+        install_missing_arch_packages
+    else
+        error "Unsupported distribution family: $DISTRO_ID"
+        return 1
     fi
 
-    log "Bootstrap foundation check complete"
+    log "Bootstrap foundation complete"
 }
+
 main "$@"
