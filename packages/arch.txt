@@ -1,0 +1,6 @@
+base-devel
+pacman-contrib
+reflector
+openssh
+git-lfs
+pkgfile

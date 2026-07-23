@@ -1,0 +1,17 @@
+git
+fish
+vim
+fastfetch
+tmux
+ripgrep
+fd
+bat
+eza
+tree
+wget
+curl
+zip
+unzip
+which
+man-db
+man-pages
