@@ -3,20 +3,8 @@
 set -Eeuo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-
-DRY_RUN=false
-INSTALL_MODE=false
-
-INSTALLED_PACKAGES=()
-MISSING_PACKAGES=()
-
-log() {
-    printf '[JonOS] %s\n' "$*"
-}
-
-error() {
-    printf '[JonOS] ERROR: %s\n' "$*" >&2
-}
+source "$SCRIPT_DIR/lib/context.sh"
+source "$SCRIPT_DIR/lib/logging.sh"
 
 usage() {
     cat <<'EOF'

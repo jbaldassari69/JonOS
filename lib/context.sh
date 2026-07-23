@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+DRY_RUN=false
+INSTALL_MODE=false
+
+DISTRO_ID=""
+DISTRO_NAME=""
+DISTRO_LIKE=""
+
+INSTALLED_PACKAGES=()
+MISSING_PACKAGES=()
