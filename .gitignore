@@ -1,0 +1,18 @@
+# KDE temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Qt Creator
+*.pro.user
+
+# Local secrets
+.env
