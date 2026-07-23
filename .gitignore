@@ -1,29 +1,14 @@
-<<<<<<< HEAD
 # KDE temporary files
 *.tmp
 *.bak
+
+# Vim
 *.swp
+*.swo
 *~
 
 # Logs
 *.log
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Qt Creator
-*.pro.user
-
-# Local secrets
-.env
-=======
-# Vim
-*.swp
-*.swo
-
-# Backup files
-*~
 
 # macOS
 .DS_Store
@@ -36,6 +21,8 @@ desktop.ini
 __pycache__/
 *.pyc
 
-# Logs
-*.log
->>>>>>> origin/main
+# Qt Creator
+*.pro.user
+
+# Local secrets
+.env
