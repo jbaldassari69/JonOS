@@ -57,6 +57,30 @@ parse_arguments() {
     done
 }
 
+read_manifest() {
+    local manifest="$1"
+
+    if [[ ! -f "$manifest" ]]; then
+        error "Package manifest not found: $manifest"
+        return 1
+    fi
+
+    grep -Ev '^[[:space:]]*(#|$)' "$manifest"
+}
+
+show_packages() {
+    local manifest="$1"
+    local label="$2"
+    local packages=()
+
+    mapfile -t packages < <(read_manifest "$manifest")
+
+    log "$label packages: ${#packages[@]}"
+
+    for package in "${packages[@]}"; do
+        printf '  - %s\n' "$package"
+    done
+}
 main() {
     parse_arguments "$@"
     detect_distribution
@@ -69,11 +93,16 @@ main() {
         log "Distribution family: $DISTRO_LIKE"
     fi
 
+    show_packages "$SCRIPT_DIR/packages/common.txt" "Common"
+
+    if [[ "$DISTRO_ID" == "arch" || "$DISTRO_LIKE" == *"arch"* ]]; then
+        show_packages "$SCRIPT_DIR/packages/arch.txt" "Arch family"
+    fi
+
     if [[ "$DRY_RUN" == true ]]; then
         log "Dry-run mode enabled; no changes will be made"
     fi
 
     log "Bootstrap foundation check complete"
 }
-
 main "$@"
