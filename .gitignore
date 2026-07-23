@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # KDE temporary files
 *.tmp
 *.bak
@@ -16,3 +17,25 @@ Thumbs.db
 
 # Local secrets
 .env
+=======
+# Vim
+*.swp
+*.swo
+
+# Backup files
+*~
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Python
+__pycache__/
+*.pyc
+
+# Logs
+*.log
+>>>>>>> origin/main
