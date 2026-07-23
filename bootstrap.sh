@@ -80,6 +80,24 @@ show_packages() {
     for package in "${packages[@]}"; do
         printf '  - %s\n' "$package"
     done
+validate_arch_packages() {
+    local manifest="$1"
+    local package
+    local invalid=0
+
+    while IFS= read -r package; do
+        [[ -z "$package" ]] && continue
+
+        if pacman -Si "$package" >/dev/null 2>&1; then
+            log "Valid package: $package"
+        else
+            error "Package not found in configured repositories: $package"
+            invalid=1
+        fi
+    done < <(read_manifest "$manifest")
+
+    return "$invalid"
+}
 }
 main() {
     parse_arguments "$@"
@@ -98,9 +116,15 @@ main() {
     if [[ "$DISTRO_ID" == "arch" || "$DISTRO_LIKE" == *"arch"* ]]; then
         show_packages "$SCRIPT_DIR/packages/arch.txt" "Arch family"
     fi
-
     if [[ "$DRY_RUN" == true ]]; then
-        log "Dry-run mode enabled; no changes will be made"
+    log "Dry-run mode enabled; no changes will be made"
+    fi
+
+    if [[ "$DISTRO_ID" == "arch" || "$DISTRO_LIKE" == *"arch"* ]]; then
+    log "Validating Arch package manifests"
+
+    validate_arch_packages "$SCRIPT_DIR/packages/common.txt"
+    validate_arch_packages "$SCRIPT_DIR/packages/arch.txt"
     fi
 
     log "Bootstrap foundation check complete"
