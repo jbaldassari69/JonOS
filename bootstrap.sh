@@ -5,6 +5,9 @@ set -Eeuo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 DRY_RUN=false
 
+INSTALLED_PACKAGES=()
+MISSING_PACKAGES=()
+
 log() {
     printf '[JonOS] %s\n' "$*"
 }
@@ -99,27 +102,37 @@ validate_arch_packages() {
     return "$invalid"
 }
 }
-
 check_installed_arch_packages() {
     local manifest="$1"
     local package
-    local installed=0
-    local missing=0
 
     while IFS= read -r package; do
         [[ -z "$package" ]] && continue
 
         if pacman -Q "$package" >/dev/null 2>&1; then
+            INSTALLED_PACKAGES+=("$package")
             printf '  [installed] %s\n' "$package"
-            ((installed += 1))
         else
+            MISSING_PACKAGES+=("$package")
             printf '  [missing]   %s\n' "$package"
-            ((missing += 1))
         fi
     done < <(read_manifest "$manifest")
+    show_package_summary() {
+    printf '\n'
+    log "Package summary"
+    printf '  Installed: %d\n' "${#INSTALLED_PACKAGES[@]}"
+    printf '  Missing:   %d\n' "${#MISSING_PACKAGES[@]}"
 
-    log "Installed: $installed"
-    log "Missing: $missing"
+    if (( ${#MISSING_PACKAGES[@]} > 0 )); then
+        printf '\n'
+        log "Packages requiring installation"
+
+        local package
+        for package in "${MISSING_PACKAGES[@]}"; do
+            printf '  - %s\n' "$package"
+        done
+    fi
+}
 }
 
 main() {
@@ -155,6 +168,7 @@ main() {
 
     check_installed_arch_packages "$SCRIPT_DIR/packages/common.txt"
     check_installed_arch_packages "$SCRIPT_DIR/packages/arch.txt"
+    show_package_summary
     fi
 
     log "Bootstrap foundation check complete"
